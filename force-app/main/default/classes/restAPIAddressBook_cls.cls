@@ -20,91 +20,39 @@ global without sharing class restAPIAddressBook_cls {
 
         // instance wrapper return api 
         returnApi returnAddressBook = new returnApi();
-
-        // create validation error
-        Set<String> setAddressBookError        = new Set<String>();
-        Set<String> setAddressBookSuccess      = new Set<String>();
-        Set<String> setAccountIdCreated        = new Set<String>();
-        Set<String> setBusinessDetailIdCreated = new Set<String>();
-        Set<String> setAddressBookIdCreated    = new Set<String>();
-        Set<String> setAddressBookCreated      = new Set<String>();
         
-        // salva os ID das contas criadas
-        Database.UpsertResult[] resultsAccount = Database.upsert(lstAccount, Account.Fields.ExternalIdByBussiness__c, false);
-        for (Integer i = 0; i < resultsAccount.size(); i++) {
-            if(resultsAccount[i].isSuccess()){
-                setAccountIdCreated.add(resultsAccount[i].getId());
-                System.debug('Successfully created ID: ' + resultsAccount[i].getId());
-            } else{
-                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultsAccount[i].getErrors()[0].getMessage());
+        // Cria as contas
+        Database.upsert(lstAccount, Account.Fields.ExternalIdByBussiness__c, false);
+
+        // Busca as contas criadas e se não a conta nao foi criada (nao tiver id), remove os registros de BussinessDetail e ERP das listas para nao serem criados tambem
+        for(Account objAccount : lstAccount){
+            if(objAccount.Id == null){
+                mapBusinessDetail.remove(objAccount.ExternalIdByBussiness__c);
+                mapBusinessDetail.remove(objAccount.ExternalIdByBussiness__c);
             }
         }
 
-        // Busca as contas criadas e se não a conta nao foi criada, remove os registros de BussinessDetail e ERP das listas para nao serem criados tambem
-        for(Account objAccount : [SELECT Id, ExternalIdByBussiness__c FROM Account WHERE Id IN : setAccountIdCreated]){
-            String addressBookCreated = objAccount.ExternalIdByBussiness__c.split('-')[0];
-            setAddressBookCreated.add(addressBookCreated);
-        }
+        // Cria os BusinessDetail
+        Database.upsert(mapBusinessDetail.values(), BusinessDetail__c.Fields.ExternalIdByBussiness__c, false);
 
-        for(String addressBook : mapBusinessDetail.KeySet()){
-            if(!setAddressBookCreated.contains(addressBook)){
-                mapBusinessDetail.remove(addressBook);
-                mapERPInformation.remove(addressBook);
+        // Busca os BusinessDetail criados e se não o BusinessDetail nao foi criado (nao tiver id), remove os registros de ERP da lista para nao serem criados tambem
+        for(BusinessDetail__c objBusinessDetail : mapBusinessDetail.values()){
+            if(objBusinessDetail.Id == null){
+                mapERPInformation.remove(objBusinessDetail.ExternalIdByBussiness__c);
             }
         }
 
-        // salva os ID das BusinessDetail criadas
-        Database.UpsertResult[] resultsBussinessDetail = Database.upsert(mapBusinessDetail.values(), BusinessDetail__c.Fields.ExternalIdByBussiness__c, false);
-        for (Integer i = 0; i < resultsBussinessDetail.size(); i++) {
-            if(resultsBussinessDetail[i].isSuccess()){
-                setBusinessDetailIdCreated.add(resultsBussinessDetail[i].getId());
-                System.debug('Successfully created ID: ' + resultsBussinessDetail[i].getId());
-            } else{
-                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultsBussinessDetail[i].getErrors()[0].getMessage());
-            }
-        }
+        // Cria os ERP
+        Database.upsert(mapERPInformation.values(), ERPInformation__c.Fields.ExternalIdByBussiness__c, false);
 
-        // Busca os BusinessDetail criados e se não o BusinessDetail nao foi criado, remove os registros de ERP da lista para nao serem criados tambem
-        setAddressBookCreated.clear();
-        for(BusinessDetail__c objBusinessDetail : [SELECT Id, ExternalIdByBussiness__c FROM BusinessDetail__c WHERE Id IN : setBusinessDetailIdCreated]){
-            String addressBookCreated = objBusinessDetail.ExternalIdByBussiness__c.split('-')[0];
-            setAddressBookCreated.add(addressBookCreated);
-        }
-
-        for(String addressBook : mapERPInformation.KeySet()){
-            if(!setAddressBookCreated.contains(addressBook)){
-                mapERPInformation.remove(addressBook);
-            }
-        }
-
-        // Salva os ID dos ERP criados
-        Database.UpsertResult[] resultsErpInformation = Database.upsert(mapERPInformation.values(), ERPInformation__c.Fields.ExternalIdByBussiness__c, false);
-        for (Integer i = 0; i < resultsErpInformation.size(); i++) {
-            if(resultsErpInformation[i].isSuccess()){
-                setAddressBookIdCreated.add(resultsErpInformation[i].getId());
-                System.debug('Successfully created ID: ' + resultsErpInformation[i].getId());
-            } else{
-                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultsErpInformation[i].getErrors()[0].getMessage());
-            }
-        }
-
-        // Busca os ERPs criados, se não encontrar o addressBook é porque não foi criado os registros desse Adrress.
         // Adiciona os AddressBook criados em uma lista e os não criado em outra para retornar para o sistema
-        for(ERPInformation__c objERPInformation : [SELECT Id, ERPID__C FROM ERPInformation__c WHERE Id IN :setAddressBookIdCreated ]){
-            returnAddressBook.successAddressBook.add(new returnAdressBook(objERPInformation.ERPID__C, 'success', '200', 'Addressbook created successfuly'));
-            setAddressBookIdCreated.add(objERPInformation.ERPID__C);
-        }
-
-        for(AddressBook objAddressBook : listAddressBook){
-            if(!setAddressBookIdCreated.contains(objAddressBook.addressBook)){
-                returnAddressBook.errorAddressBook.add(new returnAdressBook(objAddressBook.addressBook, 'error', '500', 'Error in creation addressbook'));
+        for(ERPInformation__c objERPInformation : mapERPInformation.values()){
+            if(objERPInformation.Id == null){
+                returnAddressBook.errorAddressBook.add(new returnAdressBook(objERPInformation.ERPID__C, 'error', '500', 'Error in creation addressbook'));
+            } else {
+                returnAddressBook.successAddressBook.add(new returnAdressBook(objERPInformation.ERPID__C, 'success', '200', 'Addressbook created successfuly'));
             }
-        }
-
-        
+        }        
 
         return returnAddressBook;
     }
@@ -178,13 +126,13 @@ global without sharing class restAPIAddressBook_cls {
     global class returnAdressBook{
         public String addressBook;
         public String status;
-        public String error;
+        public String statusCode;
         public String message;
 
-        public returnAdressBook(String addressBook, String status, String error, String message){
+        public returnAdressBook(String addressBook, String status, String statusCode, String message){
             this.addressBook = addressBook;            
             this.status = status;
-            this.error = error;
+            this.statusCode = statusCode;
             this.message = message;
         }
     }
