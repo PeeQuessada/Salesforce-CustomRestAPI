@@ -1,4 +1,11 @@
 global with sharing class restAddressBookv2_cls {
+
+    public static ReturnApi createAddressBook(List<AddressBook> lstAddressBook){
+        
+
+
+        return new restAddressBookv2_cls.ReturnApi();
+    }
     
     
     global class AddressBook{
