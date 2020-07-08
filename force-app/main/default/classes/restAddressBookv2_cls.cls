@@ -57,6 +57,10 @@ global with sharing class restAddressBookv2_cls {
         Set<String> setBusinessDetailIdUpdate = new Set<String>();
         Set<String> setERPInformationIdUpdate = new Set<String>();
         Set<String> setAddressbookUpdate   = new Set<String>();
+        Set<String> setAccountIdInsert = new Set<String>();
+        Set<String> setBusinessDetailIdInsert = new Set<String>();
+        Set<String> setERPInformationIdInsert = new Set<String>();
+        Set<String> setAddressbookInsert   = new Set<String>();
 
         // Atualiza as contas
         List<Database.SaveResult> resultAccount = Database.update(mapAccountUpdate.values(), false);
@@ -89,7 +93,7 @@ global with sharing class restAddressBookv2_cls {
                 mapERPInformationUpdate.remove(addressBook);  
         } 
 
-        // Atualiza os businessDetail
+        // Atualiza os ERPInformaion
         List<Database.SaveResult> resultERPInformation = Database.update(mapERPInformationUpdate.values(), false);
 
         // verifica os ERPInformation que não foram atualizadas para retornar erro para integração
@@ -103,26 +107,103 @@ global with sharing class restAddressBookv2_cls {
                 setAddressbookUpdate.add(addressBook);
         } 
 
-        
-        
+        // Criação de novos Adrresss
+
+        List<Database.SaveResult> resultAccountInsert = Database.insert(mapAccountInsert.values(), false);
+        for (Integer i = 0; i < resultAccountInsert.size(); i++) {
+            if(resultAccountInsert[i].isSuccess())
+                setAccountIdInsert.add(resultAccountInsert[i].getId());
+        }
+        for(String addressBook : mapAccountInsert.keySet()){
+            Account objAccount = mapAccountInsert.get(addressBook);
+            if(objAccount.Id == null && !setAccountIdInsert.contains(objAccount.Id)){
+                mapBusinessDetailInsert.remove(addressBook);
+                mapERPInformationInsert.remove(addressBook);
+            } else{
+                mapBusinessDetailInsert.get(addressBook).Account__c = objAccount.Id;
+                mapERPInformationInsert.get(addressBook).Account__c = objAccount.Id;
+            }
+        } 
+
+
+        // Atualiza os businessDetail
+        List<Database.SaveResult> resultBusinessDetailInsert = Database.Insert(mapBusinessDetailInsert.values(), false);
+
+        // verifica os businessDetail que não foram atualizadas para não atualizar os registros de ERPInformation
+        for (Integer i = 0; i < resultBusinessDetailInsert.size(); i++) {
+            if(resultBusinessDetailInsert[i].isSuccess())
+                setBusinessDetailIdInsert.add(resultBusinessDetailInsert[i].getId());
+            
+        }
+        for(String addressBook : mapBusinessDetailInsert.keySet()){
+            BusinessDetail__c objBusinessDetail = mapBusinessDetailInsert.get(addressBook);
+            if(objBusinessDetail.Id != null && !setBusinessDetailIdInsert.contains(objBusinessDetail.Id))
+                mapERPInformationInsert.remove(addressBook);  
+            else
+                mapERPInformationInsert.get(addressBook).BusinessDetail__c = objBusinessDetail.Id;
+        } 
+
+        // Atualiza os ERPInformaion
+        List<Database.SaveResult> resultERPInformationInsert = Database.Insert(mapERPInformationInsert.values(), false);
+
+        // verifica os ERPInformation que não foram atualizadas para retornar erro para integração
+        for (Integer i = 0; i < resultERPInformationInsert.size(); i++) {
+            if(resultERPInformationInsert[i].isSuccess())
+                setERPInformationIdInsert.add(resultERPInformationInsert[i].getId());
+        }
+        for(String addressBook : mapERPInformationInsert.keySet()){
+            ERPInformation__c objERPInformation = mapERPInformationInsert.get(addressBook);
+            if(setERPInformationIdInsert.contains(objERPInformation.Id))
+                setAddressbookInsert.add(addressBook);
+        } 
+
 
         // criação das linhas de erro e sucesso referente a atualização de addressbook
         for(AddressBook objAddressBook : lstAddressBook){
-            if(setAddressbookUpdate.contains(objAddressBook.addressBook)){
+            if(setAddressbookInsert.contains(objAddressBook.addressBook) || setAddressbookUpdate.contains(objAddressBook.addressBook)){
                 returnAddressBook.successAddressBook.add(new returnAdressBook(objAddressBook.addressBook, 'success', '200', 'Addressbook created successfuly'));
             } else{
                 returnAddressBook.errorAddressBook.add(new returnAdressBook(objAddressBook.addressBook, 'error', '500', 'Error in creation addressbook'));
             }
         }
 
-        // Criação de novos Adrresss
 
-        for (Integer i = 0; i < resultBusinessDetail.size(); i++) {
-            if(resultBusinessDetail[i].isSuccess()){
-                System.debug('Successfully created ID: ' + resultBusinessDetail[i].getId());
+
+
+
+
+
+
+
+
+
+
+
+
+        for (Integer i = 0; i < resultAccountInsert.size(); i++) {
+            if(resultAccountInsert[i].isSuccess()){
+                System.debug('Successfully created ID: ' + resultAccountInsert[i].getId());
             } else{
                 System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultBusinessDetail[i].getErrors()[0].getMessage());
+                System.debug('The error reported was: ' + resultAccountInsert[i].getErrors()[0].getMessage());
+            }
+        }
+
+        for (Integer i = 0; i < resultBusinessDetailInsert.size(); i++) {
+            if(resultBusinessDetailInsert[i].isSuccess()){
+                System.debug('Successfully created ID: ' + resultBusinessDetailInsert[i].getId());
+            } else{
+                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
+                System.debug('The error reported was: ' + resultBusinessDetailInsert[i].getErrors()[0].getMessage());
+            }
+        }
+
+        for (Integer i = 0; i < resultERPInformationInsert.size(); i++) {
+            if(resultERPInformationInsert[i].isSuccess()){
+                System.debug('Successfully created ID: ' + resultERPInformationInsert[i].getId());
+            } else{
+                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
+                System.debug('The error reported was: ' + resultERPInformationInsert[i].getErrors()[0].getMessage());
             }
         }
 
