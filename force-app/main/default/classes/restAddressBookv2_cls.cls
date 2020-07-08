@@ -167,46 +167,6 @@ global with sharing class restAddressBookv2_cls {
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        for (Integer i = 0; i < resultAccountInsert.size(); i++) {
-            if(resultAccountInsert[i].isSuccess()){
-                System.debug('Successfully created ID: ' + resultAccountInsert[i].getId());
-            } else{
-                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultAccountInsert[i].getErrors()[0].getMessage());
-            }
-        }
-
-        for (Integer i = 0; i < resultBusinessDetailInsert.size(); i++) {
-            if(resultBusinessDetailInsert[i].isSuccess()){
-                System.debug('Successfully created ID: ' + resultBusinessDetailInsert[i].getId());
-            } else{
-                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultBusinessDetailInsert[i].getErrors()[0].getMessage());
-            }
-        }
-
-        for (Integer i = 0; i < resultERPInformationInsert.size(); i++) {
-            if(resultERPInformationInsert[i].isSuccess()){
-                System.debug('Successfully created ID: ' + resultERPInformationInsert[i].getId());
-            } else{
-                System.debug('Error: could not create sobject ' + 'for array element ' + i + '.');
-                System.debug('The error reported was: ' + resultERPInformationInsert[i].getErrors()[0].getMessage());
-            }
-        }
-
         return returnAddressBook;
     }
 
