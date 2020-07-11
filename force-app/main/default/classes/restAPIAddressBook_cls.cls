@@ -24,7 +24,7 @@ global without sharing class restAPIAddressBook_cls {
         // Cria as contas
         Database.upsert(lstAccount, Account.Fields.ExternalIdByBussiness__c, false);
 
-        // Busca as contas criadas e se não a conta nao foi criada (nao tiver id), remove os registros de BussinessDetail e ERP das listas para nao serem criados tambem
+        // Busca as contas criadas e se a conta nao foi criada (nao tiver id), remove os registros de BussinessDetail e ERP das listas para nao serem criados tambem
         for(Account objAccount : lstAccount){
             if(objAccount.Id == null){
                 mapBusinessDetail.remove(objAccount.ExternalIdByBussiness__c);
@@ -35,7 +35,7 @@ global without sharing class restAPIAddressBook_cls {
         // Cria os BusinessDetail
         Database.upsert(mapBusinessDetail.values(), BusinessDetail__c.Fields.ExternalIdByBussiness__c, false);
 
-        // Busca os BusinessDetail criados e se não o BusinessDetail nao foi criado (nao tiver id), remove os registros de ERP da lista para nao serem criados tambem
+        // Busca os BusinessDetail criados e se o BusinessDetail nao foi criado (nao tiver id), remove os registros de ERP da lista para nao serem criados tambem
         for(BusinessDetail__c objBusinessDetail : mapBusinessDetail.values()){
             if(objBusinessDetail.Id == null){
                 mapERPInformation.remove(objBusinessDetail.ExternalIdByBussiness__c);
